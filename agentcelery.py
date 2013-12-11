@@ -49,6 +49,15 @@ def set_time(vm, time):
     logger.debug('set_time(%s,%s)' % (vm, time))
 
 
+@celery.task(name='agent.mount_store')
+def mount_store(vm, host, username, password):
+    reactor.connections[vm].send_command(command='mount_store',
+                                         args={'host': host,
+                                               'username': username,
+                                               'password': password})
+    logger.debug('mount_store(%s,%s,%s)' % (vm, host, username))
+
+
 @celery.task(name='vm.tasks.local_agent_tasks.agent_started')
 def agent_started(vm):
     print vm

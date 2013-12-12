@@ -1,0 +1,4 @@
+celery==3.0.24
+Twisted==13.1.0
+threadpool==1.2.7
+

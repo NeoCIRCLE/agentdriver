@@ -11,6 +11,8 @@ SOCKET_DIR = getenv('SOCKET_DIR', '/var/lib/libvirt/serial')
 
 
 old_install_platform_tweaks = Worker.install_platform_tweaks
+
+
 def install_platform_tweaks(self, worker):
     self.worker = worker
     old_install_platform_tweaks(self, worker)

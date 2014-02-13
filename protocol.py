@@ -7,7 +7,7 @@ import time
 import struct
 from utils import SerialLineReceiverBase
 
-from agentcelery import agent_started, agent_stopped, agent_ok
+from agentcelery import agent_started, agent_stopped
 
 logger = logging.getLogger(__name__)
 

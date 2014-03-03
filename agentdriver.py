@@ -1,7 +1,7 @@
 from celery.apps.worker import Worker
 from twisted.internet import reactor, inotify
 from twisted.python import filepath
-from agentcelery import celery
+from agentcelery import celery, HOSTNAME
 from protocol import inotify_handler
 from os import getenv, listdir, path
 import logging
@@ -32,6 +32,7 @@ def reactor_stopped(worker):
 def main():
     w = Worker(app=celery, concurrency=1,
                pool_cls='threads',
+               hostname=HOSTNAME + '.agentdriver',
                loglevel=logging.DEBUG)
     reactor.callInThread(w.run)
     notifier = inotify.INotify(reactor)

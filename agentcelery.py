@@ -9,11 +9,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 HOSTNAME = gethostname()
-AMQP_URI = getenv('AMQP_URI', 'amqp://cloud:password@10.7.0.96:5672/circle')
+AMQP_URI = getenv('AMQP_URI')
+CACHE_URI = getenv('CACHE_URI')
 
-
-celery = Celery('agent', broker=AMQP_URI, backend='amqp')
-celery.conf.update(CELERY_TASK_RESULT_EXPIRES=300,
+celery = Celery('agent', broker=AMQP_URI)
+celery.conf.update(CELERY_CACHE_BACKEND=CACHE_URI,
+                   CELERY_RESULT_BACKEND='cache',
+                   CELERY_TASK_RESULT_EXPIRES=300,
                    CELERY_QUEUES=(Queue(HOSTNAME + '.agent',
                                         Exchange('agent', type='direct'),
                                         routing_key='agent'), ))

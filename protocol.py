@@ -5,6 +5,8 @@ import pickle
 import logging
 import time
 import struct
+from os import getenv
+
 from utils import SerialLineReceiverBase
 
 from agentcelery import agent_started, agent_stopped
@@ -51,7 +53,9 @@ class SerialLineReceiver(SerialLineReceiverBase):
         client = GraphiteClientFactory()
         client.protocol.data = data
         client.protocol.name = self.factory.vm
-        reactor.connectTCP('10.7.0.96', 2004, client)
+        reactor.connectTCP(getenv('GRAPHITE_HOST', '127.0.0.1'),
+                           int(getenv('GRAPHITE_PORT', '2004')),
+                           client)
 
     def handle_command(self, command, args):
         if command == 'agent_stopped':

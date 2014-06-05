@@ -60,6 +60,19 @@ def mount_store(vm, host, username, password):
     logger.debug('mount_store(%s,%s,%s)' % (vm, host, username))
 
 
+@celery.task(name='agent.cleanup')
+def cleanup(vm):
+    reactor.connections[vm].send_command(command='cleanup', args={})
+    logger.debug('cleanup(%s)' % vm)
+
+
+@celery.task(name='agent.start_access_server')
+def start_access_server(vm):
+    reactor.connections[vm].send_command(
+        command='start_access_server', args={})
+    logger.debug('start_access_server(%s)' % vm)
+
+
 @celery.task(name='vm.tasks.local_agent_tasks.agent_started')
 def agent_started(vm):
     print vm

@@ -74,10 +74,10 @@ def start_access_server(vm):
 
 
 @celery.task(name='agent.update')
-def update(vm):
-    reactor.connections[vm].send_command(
-        command='update', args={})
+def update(vm, data):
     logger.debug('update(%s)' % vm)
+    return reactor.connections[vm].send_command(
+        command='update', args={'data': data}, uuid=update.request.id)
 
 
 @celery.task(name='vm.tasks.local_agent_tasks.agent_started')

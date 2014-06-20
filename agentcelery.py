@@ -97,8 +97,8 @@ def del_keys(vm, keys):
 @celery.task(name='agent.get_keys')
 def get_keys(vm):
     logger.debug('get_keys()')
-    reactor.connections[vm].send_command(
-        command='get_keys', args={})
+    return reactor.connections[vm].send_command(
+        command='get_keys', args={}, uuid=get_keys.request.id)
 
 
 @celery.task(name='vm.tasks.local_agent_tasks.agent_started')

@@ -80,6 +80,27 @@ def update(vm, data):
         command='update', args={'data': data}, uuid=update.request.id)
 
 
+@celery.task(name='agent.add_keys')
+def add_keys(vm, keys):
+    logger.debug('add_keys(%s)' % keys)
+    reactor.connections[vm].send_command(
+        command='add_keys', args={'keys': keys})
+
+
+@celery.task(name='agent.del_keys')
+def del_keys(vm, keys):
+    logger.debug('del_keys(%s)' % keys)
+    reactor.connections[vm].send_command(
+        command='del_keys', args={'keys': keys})
+
+
+@celery.task(name='agent.get_keys')
+def get_keys(vm):
+    logger.debug('get_keys()')
+    reactor.connections[vm].send_command(
+        command='get_keys', args={})
+
+
 @celery.task(name='vm.tasks.local_agent_tasks.agent_started')
 def agent_started(vm):
     print vm

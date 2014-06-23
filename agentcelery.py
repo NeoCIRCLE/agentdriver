@@ -26,7 +26,7 @@ def change_password(vm, password):
     reactor.connections[vm].send_command(command='change_password',
                                          args={'password':
                                                password})
-    logger.debug('change_password(%s,%s)' % (vm, password))
+    logger.debug('change_password(%s,%s)', vm, password)
 
 
 @celery.task(name='agent.set_hostname')
@@ -34,21 +34,21 @@ def set_hostname(vm, hostname):
     reactor.connections[vm].send_command(command='set_hostname',
                                          args={'hostname':
                                                hostname})
-    logger.debug('set_hostname(%s,%s)' % (vm, hostname))
+    logger.debug('set_hostname(%s,%s)', vm, hostname)
 
 
 @celery.task(name='agent.restart_networking')
 def restart_networking(vm):
     reactor.connections[vm].send_command(command='restart_networking',
                                          args={})
-    logger.debug('restart_networking(%s)' % (vm))
+    logger.debug('restart_networking(%s)', vm)
 
 
 @celery.task(name='agent.set_time')
 def set_time(vm, time):
     reactor.connections[vm].send_command(command='set_time',
                                          args={'time': time})
-    logger.debug('set_time(%s,%s)' % (vm, time))
+    logger.debug('set_time(%s,%s)', vm, time)
 
 
 @celery.task(name='agent.mount_store')
@@ -57,46 +57,46 @@ def mount_store(vm, host, username, password):
                                          args={'host': host,
                                                'username': username,
                                                'password': password})
-    logger.debug('mount_store(%s,%s,%s)' % (vm, host, username))
+    logger.debug('mount_store(%s,%s,%s)', vm, host, username)
 
 
 @celery.task(name='agent.cleanup')
 def cleanup(vm):
     reactor.connections[vm].send_command(command='cleanup', args={})
-    logger.debug('cleanup(%s)' % vm)
+    logger.debug('cleanup(%s)', vm)
 
 
 @celery.task(name='agent.start_access_server')
 def start_access_server(vm):
     reactor.connections[vm].send_command(
         command='start_access_server', args={})
-    logger.debug('start_access_server(%s)' % vm)
+    logger.debug('start_access_server(%s)', vm)
 
 
 @celery.task(name='agent.update')
 def update(vm, data):
-    logger.debug('update(%s)' % vm)
+    logger.debug('update(%s)', vm)
     return reactor.connections[vm].send_command(
         command='update', args={'data': data}, uuid=update.request.id)
 
 
 @celery.task(name='agent.add_keys')
 def add_keys(vm, keys):
-    logger.debug('add_keys(%s)' % keys)
+    logger.debug('add_keys(%s %s)', vm, keys)
     reactor.connections[vm].send_command(
         command='add_keys', args={'keys': keys})
 
 
 @celery.task(name='agent.del_keys')
 def del_keys(vm, keys):
-    logger.debug('del_keys(%s)' % keys)
+    logger.debug('del_keys(%s, %s)', vm, keys)
     reactor.connections[vm].send_command(
         command='del_keys', args={'keys': keys})
 
 
 @celery.task(name='agent.get_keys')
 def get_keys(vm):
-    logger.debug('get_keys()')
+    logger.debug('get_keys(%s)', vm)
     return reactor.connections[vm].send_command(
         command='get_keys', args={}, uuid=get_keys.request.id)
 
@@ -114,16 +114,3 @@ def agent_stopped(vm):
 @celery.task(name='vm.tasks.local_agent_tasks.agent_ok')
 def agent_ok(vm):
     print vm
-
-
-# class StartProcTask(celery.Task):
-#    def run(self):
-#        print 'HELLO'*10
-#        self.app.proc = WCProcessProtocol('testing')
-#        self.app.proc._waiting['startup'] = Deferred()
-#        def lofasz(asd):
-#            print 'ezjott%s' % asd
-#        self.app.proc._waiting['startup'].addCallback(lofasz)
-#        threads.blockingCallFromThread(reactor, reactor.spawnProcess,
-#                                       self.app.proc, 'ls', ['ls'])
-#        return True

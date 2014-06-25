@@ -101,6 +101,13 @@ def get_keys(vm):
         command='get_keys', args={}, uuid=get_keys.request.id)
 
 
+@celery.task(name='agent.send_notification')
+def send_notification(vm, msg):
+    logger.debug('send_notification(%s, %s)', vm, msg)
+    return reactor.connections[vm].send_command(
+        command='send_notification', args={'msg': msg})
+
+
 @celery.task(name='vm.tasks.local_agent_tasks.agent_started')
 def agent_started(vm):
     print vm

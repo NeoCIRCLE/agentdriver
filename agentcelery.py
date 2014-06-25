@@ -82,7 +82,7 @@ def update(vm, data):
 
 @celery.task(name='agent.add_keys')
 def add_keys(vm, keys):
-    logger.debug('add_keys(%s %s)', vm, keys)
+    logger.debug('add_keys(%s, %s)', vm, keys)
     reactor.connections[vm].send_command(
         command='add_keys', args={'keys': keys})
 

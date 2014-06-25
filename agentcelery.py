@@ -108,6 +108,11 @@ def send_notification(vm, msg):
         command='send_notification', args={'msg': msg})
 
 
+@celery.task(name='vm.tasks.local_agent_tasks.renew')
+def renew(vm):
+    print vm
+
+
 @celery.task(name='vm.tasks.local_agent_tasks.agent_started')
 def agent_started(vm):
     print vm

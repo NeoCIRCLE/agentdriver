@@ -11,7 +11,7 @@ from celery.result import TimeoutError
 
 from utils import SerialLineReceiverBase
 
-from agentcelery import agent_started, agent_stopped
+from agentcelery import agent_started, agent_stopped, renew
 
 logger = logging.getLogger(__name__)
 
@@ -63,11 +63,14 @@ class SerialLineReceiver(SerialLineReceiverBase):
         if command == 'agent_stopped':
             agent_stopped.apply_async(queue='localhost.man',
                                       args=(self.factory.vm, ))
-        if command == 'agent_started':
+        elif command == 'agent_started':
             version = args.get('version', None)
             agent_started.apply_async(queue='localhost.man',
                                       args=(self.factory.vm, version))
-        if command == 'ping':
+        elif command == 'renew':
+            renew.apply_async(queue='localhost.man',
+                              args=(self.factory.vm, ))
+        elif command == 'ping':
             self.send_response(response='pong',
                                args=args)
 

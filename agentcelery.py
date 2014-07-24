@@ -101,11 +101,11 @@ def get_keys(vm):
         command='get_keys', args={}, uuid=get_keys.request.id)
 
 
-@celery.task(name='agent.send_notification')
-def send_notification(vm, msg):
-    logger.debug('send_notification(%s, %s)', vm, msg)
+@celery.task(name='agent.send_expiration')
+def send_expiration(vm, url):
+    logger.debug('send_expiration(%s, %s)', vm, url)
     return reactor.connections[vm].send_command(
-        command='send_notification', args={'msg': msg})
+        command='send_expiration', args={'url': url})
 
 
 @celery.task(name='vm.tasks.local_agent_tasks.renew')

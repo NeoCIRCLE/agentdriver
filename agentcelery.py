@@ -108,6 +108,13 @@ def send_expiration(vm, url):
         command='send_expiration', args={'url': url})
 
 
+@celery.task(name='agent.change_ip')
+def change_ip(vm, interfaces, dns):
+    logger.debug('change_ip(%s, %s, %s)', vm, interfaces, dns)
+    return reactor.connections[vm].send_command(
+        command='change_ip', args={'interfaces': interfaces, 'dns': dns})
+
+
 @celery.task(name='vm.tasks.local_agent_tasks.renew')
 def renew(vm):
     print vm

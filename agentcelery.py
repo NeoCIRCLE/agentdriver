@@ -1,9 +1,11 @@
 # from twisted.internet.defer import Deferred
 from twisted.internet import reactor  # threads
+from celery.result import TimeoutError
 from celery import Celery
 from kombu import Queue, Exchange
 from os import getenv
 from socket import gethostname
+from threading import Event
 import logging
 
 logger = logging.getLogger()
@@ -21,98 +23,100 @@ celery.conf.update(CELERY_CACHE_BACKEND=CACHE_URI,
                                         routing_key='agent'), ))
 
 
+def send_command(vm, command, *args, **kwargs):
+    uuid = kwargs.get('uuid', None)
+    timeout = kwargs.get('timeout', 10)
+    if uuid:
+        event = Event()
+        reactor.running_tasks[vm][uuid] = event
+        reactor.ended_tasks[vm][uuid] = None
+
+    for conn in reactor.connections[vm]:
+        logger.info('%s(%s, %s)', command, vm,
+                    ', '.join(map(lambda x: str(x)[:100], kwargs.values())))
+        conn.send_command(command=command, args=kwargs)
+
+    if uuid:
+        success = event.wait(timeout)
+        retval = reactor.ended_tasks[vm][uuid]
+
+        del reactor.ended_tasks[vm][uuid]
+        del reactor.running_tasks[vm][uuid]
+
+        if not success:
+            raise TimeoutError()
+
+        return retval
+
+
 @celery.task(name='agent.change_password')
 def change_password(vm, password):
-    reactor.connections[vm].send_command(command='change_password',
-                                         args={'password':
-                                               password})
-    logger.debug('change_password(%s,%s)', vm, password)
+    send_command(vm, command='change_password', password=password)
 
 
 @celery.task(name='agent.set_hostname')
 def set_hostname(vm, hostname):
-    reactor.connections[vm].send_command(command='set_hostname',
-                                         args={'hostname':
-                                               hostname})
-    logger.debug('set_hostname(%s,%s)', vm, hostname)
+    send_command(vm, command='set_hostname', hostname=hostname)
 
 
 @celery.task(name='agent.restart_networking')
 def restart_networking(vm):
-    reactor.connections[vm].send_command(command='restart_networking',
-                                         args={})
-    logger.debug('restart_networking(%s)', vm)
+    send_command(vm, command='restart_networking')
 
 
 @celery.task(name='agent.set_time')
 def set_time(vm, time):
-    reactor.connections[vm].send_command(command='set_time',
-                                         args={'time': time})
-    logger.debug('set_time(%s,%s)', vm, time)
+    send_command(vm, command='set_time', time=time)
 
 
 @celery.task(name='agent.mount_store')
 def mount_store(vm, host, username, password):
-    reactor.connections[vm].send_command(command='mount_store',
-                                         args={'host': host,
-                                               'username': username,
-                                               'password': password})
-    logger.debug('mount_store(%s,%s,%s)', vm, host, username)
+    send_command(vm, command='mount_store', host=host,
+                 username=username, password=password)
 
 
 @celery.task(name='agent.cleanup')
 def cleanup(vm):
-    reactor.connections[vm].send_command(command='cleanup', args={})
-    logger.debug('cleanup(%s)', vm)
+    send_command(vm, command='cleanup')
 
 
 @celery.task(name='agent.start_access_server')
 def start_access_server(vm):
-    reactor.connections[vm].send_command(
-        command='start_access_server', args={})
-    logger.debug('start_access_server(%s)', vm)
+    send_command(vm, command='start_access_server')
 
 
 @celery.task(name='agent.update')
-def update(vm, data):
-    logger.debug('update(%s)', vm)
-    return reactor.connections[vm].send_command(
-        command='update', args={'data': data}, uuid=update.request.id)
+def update(vm, data, executable=None):
+    kwargs = {'command': 'update', 'data': data, 'uuid': update.request.id}
+    if executable is not None:
+        kwargs['executable'] = executable
+    return send_command(vm, **kwargs)
 
 
 @celery.task(name='agent.add_keys')
 def add_keys(vm, keys):
-    logger.debug('add_keys(%s, %s)', vm, keys)
-    reactor.connections[vm].send_command(
-        command='add_keys', args={'keys': keys})
+    send_command(vm, command='add_keys', keys=keys)
 
 
 @celery.task(name='agent.del_keys')
 def del_keys(vm, keys):
-    logger.debug('del_keys(%s, %s)', vm, keys)
-    reactor.connections[vm].send_command(
-        command='del_keys', args={'keys': keys})
+    send_command(vm, command='del_keys', keys=keys)
 
 
 @celery.task(name='agent.get_keys')
 def get_keys(vm):
-    logger.debug('get_keys(%s)', vm)
-    return reactor.connections[vm].send_command(
-        command='get_keys', args={}, uuid=get_keys.request.id)
+    return send_command(vm, command='get_keys')
 
 
 @celery.task(name='agent.send_expiration')
 def send_expiration(vm, url):
-    logger.debug('send_expiration(%s, %s)', vm, url)
-    return reactor.connections[vm].send_command(
-        command='send_expiration', args={'url': url})
+    return send_command(vm, command='send_expiration',
+                        url=url)
 
 
 @celery.task(name='agent.change_ip')
 def change_ip(vm, interfaces, dns):
-    logger.debug('change_ip(%s, %s, %s)', vm, interfaces, dns)
-    return reactor.connections[vm].send_command(
-        command='change_ip', args={'interfaces': interfaces, 'dns': dns})
+    send_command(vm, command='change_ip', interfaces=interfaces, dns=dns)
 
 
 @celery.task(name='vm.tasks.local_agent_tasks.renew')

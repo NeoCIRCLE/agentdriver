@@ -25,6 +25,8 @@ Worker.install_platform_tweaks = install_platform_tweaks
 
 
 def reactor_started():
+    reactor.running_tasks = {}
+    reactor.ended_tasks = {}
     for f in listdir(SOCKET_DIR):
         f = path.join(SOCKET_DIR, f)
         inotify_handler(None, filepath.FilePath(f), None)

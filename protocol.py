@@ -13,7 +13,7 @@ from utils import SerialLineReceiverBase
 
 from agentcelery import agent_started, agent_stopped, renew
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 reactor.connections = {}
 
@@ -47,6 +47,7 @@ def inotify_handler(self, file, mask):
     if vm in reactor.connections:
         return
     serial = SerialLineReceiverFactory(vm)
+    logger.info("connecting to %s (%s)", vm, file.path)
     reactor.connectUNIX(file.path, serial)
 
 

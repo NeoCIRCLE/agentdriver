@@ -3,8 +3,13 @@ from twisted.internet import reactor, inotify
 from twisted.python import filepath
 from agentcelery import celery, HOSTNAME
 from protocol import inotify_handler
-from os import getenv, listdir, path
+from os import getenv, listdir, path, environ
 import logging
+
+logging.basicConfig()
+logger = logging.getLogger()
+level = environ.get('LOGLEVEL', 'INFO')
+logger.setLevel(level)
 
 
 SOCKET_DIR = getenv('SOCKET_DIR', '/var/lib/libvirt/serial')
@@ -33,7 +38,7 @@ def main():
     w = Worker(app=celery, concurrency=1,
                pool_cls='threads',
                hostname=HOSTNAME + '.agentdriver',
-               loglevel=logging.DEBUG)
+               loglevel=level)
     reactor.callInThread(w.run)
     notifier = inotify.INotify(reactor)
     notifier.startReading()

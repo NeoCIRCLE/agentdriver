@@ -6,7 +6,7 @@ from os import getenv
 from socket import gethostname
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 HOSTNAME = gethostname()
 AMQP_URI = getenv('AMQP_URI')

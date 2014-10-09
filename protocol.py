@@ -5,15 +5,13 @@ import pickle
 import logging
 import time
 import struct
-from threading import Event
 from os import getenv
-from celery.result import TimeoutError
 
 from utils import SerialLineReceiverBase
 
 from agentcelery import agent_started, agent_stopped, renew
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 reactor.connections = {}
 
@@ -42,11 +40,13 @@ class GraphiteClientFactory(protocol.ClientFactory):
 
 
 def inotify_handler(self, file, mask):
-    vm = file.basename()
-    logger.info('inotify: %s' % vm)
-    if vm in reactor.connections:
-        return
+    vm = file.basename().replace('vio-', '')
+    logger.info('inotify: %s (%s)', vm, file.path)
+    for conn in reactor.connections.get(vm, []):
+        if file.path == conn.transport.addr:
+            return
     serial = SerialLineReceiverFactory(vm)
+    logger.info("connecting to %s (%s)", vm, file.path)
     reactor.connectUNIX(file.path, serial)
 
 
@@ -75,47 +75,29 @@ class SerialLineReceiver(SerialLineReceiverBase):
                                args=args)
 
     def handle_response(self, response, args):
+        vm = self.factory.vm
         if response == 'status':
             self.send_to_graphite(args)
         else:
             uuid = args.get('uuid', None)
             if not uuid:
                 return
-            event = self.factory.running_tasks.get(uuid, None)
+            event = reactor.running_tasks[vm].get(uuid, None)
             if event:
-                self.factory.ended_tasks[uuid] = args
+                reactor.ended_tasks[vm][uuid] = args
                 event.set()
 
     def connectionMade(self):
-        logger.info("connected to %s" % self.factory.vm)
-        reactor.connections[self.factory.vm] = self
+        logger.info("connected to %s (%s)", self.factory.vm,
+                    self.transport.addr)
+        if self.factory.vm not in reactor.connections:
+            reactor.connections[self.factory.vm] = set()
+        reactor.connections[self.factory.vm].add(self)
 
     def connectionLost(self, reason):
-        logger.info("disconnected from %s" % self.factory.vm)
-        del reactor.connections[self.factory.vm]
-
-    def send_command(self, command, args, timeout=10.0, uuid=None):
-        if not uuid:
-            super(SerialLineReceiver, self).send_command(command, args)
-            return
-
-        event = Event()
-        args['uuid'] = uuid
-        self.factory.running_tasks[uuid] = event
-        self.factory.ended_tasks[uuid] = None
-
-        super(SerialLineReceiver, self).send_command(command, args)
-
-        success = event.wait(timeout)
-        retval = self.factory.ended_tasks[uuid]
-
-        del self.factory.ended_tasks[uuid]
-        del self.factory.running_tasks[uuid]
-
-        if not success:
-            raise TimeoutError()
-
-        return retval
+        logger.info("disconnected from %s (%s)", self.factory.vm,
+                    self.transport.addr)
+        reactor.connections[self.factory.vm].remove(self)
 
 
 class SerialLineReceiverFactory(protocol.ClientFactory):
@@ -123,5 +105,7 @@ class SerialLineReceiverFactory(protocol.ClientFactory):
 
     def __init__(self, vm):
         self.vm = vm
-        self.running_tasks = {}
-        self.ended_tasks = {}
+        if vm not in reactor.running_tasks:
+            reactor.running_tasks[vm] = {}
+        if vm not in reactor.ended_tasks:
+            reactor.ended_tasks[vm] = {}

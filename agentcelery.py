@@ -25,7 +25,7 @@ celery.conf.update(CELERY_CACHE_BACKEND=CACHE_URI,
 
 def send_command(vm, command, *args, **kwargs):
     uuid = kwargs.get('uuid', None)
-    timeout = kwargs.get('timeout', 10)
+    timeout = kwargs.get('timeout', 58)
     if uuid:
         event = Event()
         reactor.running_tasks[vm][uuid] = event
@@ -85,11 +85,25 @@ def start_access_server(vm):
     send_command(vm, command='start_access_server')
 
 
+@celery.task(name='agent.append')
+def append(vm, data, filename, chunk_number):
+    kwargs = {'command': 'append', 'data': data, 'chunk_number': chunk_number,
+              'filename': filename, 'uuid': append.request.id}
+    return send_command(vm, **kwargs)
+
+
+@celery.task(name='agent.update_legacy')
+def update_legacy(vm, data):
+    kwargs = {'command': 'update', 'uuid': update_legacy.request.id,
+              'data': data}
+    return send_command(vm, **kwargs)
+
+
 @celery.task(name='agent.update')
-def update(vm, data, executable=None):
-    kwargs = {'command': 'update', 'data': data, 'uuid': update.request.id}
-    if executable is not None:
-        kwargs['executable'] = executable
+def update(vm, filename, executable, checksum):
+    kwargs = {'command': 'update', 'uuid': update.request.id,
+              'filename': filename, 'checksum': checksum,
+              'executable': executable}
     return send_command(vm, **kwargs)
 
 

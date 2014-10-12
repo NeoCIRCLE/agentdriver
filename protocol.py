@@ -33,6 +33,7 @@ class GraphiteClientProtocol(protocol.Protocol):
         self.transport.write(message)
         self.transport.loseConnection()
         logger.debug('s: %s' % self.data)
+        logger.info("Monitor info from: %s", self.name)
 
 
 class GraphiteClientFactory(protocol.ClientFactory):
@@ -65,8 +66,9 @@ class SerialLineReceiver(SerialLineReceiverBase):
                                       args=(self.factory.vm, ))
         elif command == 'agent_started':
             version = args.get('version', None)
+            system = args.get('system', None)
             agent_started.apply_async(queue='localhost.man',
-                                      args=(self.factory.vm, version))
+                                      args=(self.factory.vm, version, system))
         elif command == 'renew':
             renew.apply_async(queue='localhost.man',
                               args=(self.factory.vm, ))

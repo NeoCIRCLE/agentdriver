@@ -32,6 +32,8 @@ def send_command(vm, command, *args, **kwargs):
         reactor.ended_tasks[vm][uuid] = None
 
     for conn in reactor.connections[vm]:
+        if command == 'append' and 'vio-cloud' not in conn.transport.addr:
+            continue
         logger.info('%s(%s, %s)', command, vm,
                     ', '.join(map(lambda x: str(x)[:100], kwargs.values())))
         conn.send_command(command=command, args=kwargs)

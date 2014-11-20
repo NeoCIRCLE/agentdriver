@@ -23,6 +23,8 @@ class SerialLineReceiverBase(LineReceiver, object):
         raise NotImplementedError("Subclass must implement abstract method")
 
     def lineReceived(self, data):
+        if not data.strip():  # ignore empty lines
+            return
         try:
             data = json.loads(data)
             args = data.get('args', {})

@@ -3,7 +3,8 @@ from twisted.internet import reactor, inotify
 from twisted.python import filepath
 from agentcelery import celery, HOSTNAME
 from protocol import inotify_handler
-from os import getenv, listdir, path, environ
+from os import getenv, listdir, path, environ, kill, getpid
+import signal
 import logging
 
 logging.basicConfig()
@@ -33,7 +34,8 @@ def reactor_started():
 
 
 def reactor_stopped(worker):
-    worker.worker.stop()
+    logger.info("Reactor stopped.")
+    kill(getpid(), signal.SIGKILL)
 
 
 def main():
@@ -41,7 +43,7 @@ def main():
                pool_cls='threads',
                hostname=HOSTNAME + '.agentdriver',
                loglevel=level)
-    reactor.callInThread(w.run)
+    reactor.callInThread(w.start)
     notifier = inotify.INotify(reactor)
     notifier.startReading()
     notifier.watch(filepath.FilePath(SOCKET_DIR),

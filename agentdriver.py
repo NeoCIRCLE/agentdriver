@@ -42,6 +42,7 @@ def main():
     w = Worker(app=celery, concurrency=1,
                pool_cls='threads',
                hostname=HOSTNAME + '.agentdriver',
+               without_mingle=True, without_gossip=True,
                loglevel=level)
     reactor.callInThread(w.start)
     notifier = inotify.INotify(reactor)

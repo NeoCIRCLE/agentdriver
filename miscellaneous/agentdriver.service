@@ -1,0 +1,13 @@
+[Unit]
+Description=CIRCLE agentdriver
+BindsTo=node.service
+
+[Service]
+User=cloud
+Group=cloud
+WorkingDirectory=/home/cloud/agentdriver
+ExecStart=/bin/bash -c "source /etc/profile; workon agentdriver; exec python agentdriver.py"
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

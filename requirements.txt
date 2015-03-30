@@ -1,3 +1,2 @@
-celery==3.1.17
-Twisted==13.1.0
-threadpool==1.2.7
+librabbitmq==1.6.1
+python-inotify==0.6-test

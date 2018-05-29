@@ -6,7 +6,8 @@ BindsTo=node.service
 User=cloud
 Group=cloud
 WorkingDirectory=/home/cloud/agentdriver
-ExecStart=/bin/bash -c "source /etc/profile; workon agentdriver; exec python agentdriver.py"
+Environment="VENV_PATH=/home/cloud/.virtualenvs"
+ExecStart=/bin/bash -c "source $VENV_PATH/agentdriver/bin/activate; source $VENV_PATH/agentdriver/bin/postactivate; exec python agentdriver.py"
 Restart=always
 
 [Install]

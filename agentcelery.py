@@ -10,7 +10,7 @@ import logging
 
 logger = logging.getLogger()
 
-HOSTNAME = gethostname()
+HOSTNAME = gethostname().split('.')[0]
 AMQP_URI = getenv('AMQP_URI')
 
 celery = Celery('agent', broker=AMQP_URI)
